@@ -139,7 +139,7 @@ if (!C.url || !C.anonKey || !window.supabase) {
 const sb = window.supabase.createClient(C.url, C.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 
 /* ---------- stato ---------- */
-const S = { user: null, mem: null, operator: null, fam: null, meds: [], logs: [], contacts: [], appts: [], devices: [], checks: [], msgs: [], reqs: [], members: [], invites: [], mail: [], opReqs: [], view: 'nonni', mediaUrls: {}, newCode: null };
+const S = { user: null, mem: null, operator: null, fam: null, meds: [], logs: [], contacts: [], appts: [], devices: [], checks: [], msgs: [], reqs: [], members: [], invites: [], mail: [], opReqs: [], opFams: [], settings: {}, view: 'nonni', mediaUrls: {}, newCode: null };
 async function run(p, okMsg) { const { data, error } = await p; if (error) { toast('Qualcosa non va: ' + error.message); throw error; } if (okMsg) toast(okMsg); return data; }
 
 /* ---------- caricamento dati ---------- */
@@ -151,6 +151,7 @@ async function loadAll() {
     sb.from('service_operators').select('display_name').eq('user_id', user.id).maybeSingle()
   ]);
   S.mem = (mem.data || [])[0] || null; S.operator = op.data || null;
+  { const st = await sb.from('app_settings').select('*').maybeSingle(); S.settings = st.data || {}; }
   if (S.mem) await loadFamily();
   if (S.operator) await loadOperator();
   if (!S.viewSet) { S.view = S.mem ? (S.mem.role === 'nonno' ? 'nonni' : 'famiglia') : (S.operator ? 'servizi' : 'nonni'); S.viewSet = true; }
@@ -176,6 +177,8 @@ async function loadFamily() {
 async function loadOperator() {
   const { data } = await sb.from('requests').select('*, families(nonno_name, address, zone)').not('svc', 'is', null).order('created_at', { ascending: false }).limit(100);
   S.opReqs = data || [];
+  const fams = await sb.from('families').select('id, nonno_name, trial_ends, paid_until, created_at').order('created_at', { ascending: false }).limit(200);
+  S.opFams = Array.isArray(fams.data) ? fams.data : [];
 }
 async function signMedia() {
   const need = S.msgs.filter(m => m.media_path && !S.mediaUrls[m.media_path]).map(m => m.media_path);
@@ -215,6 +218,16 @@ function reqStatus(r) {
   return r.claimed_by ? 'Ci pensa ' + r.claimed_by : 'In attesa: nessuno se ne occupa ancora';
 }
 const active = () => S.fam && ((S.fam.paid_until && S.fam.paid_until >= dkey(new Date())) || S.fam.trial_ends >= dkey(new Date()));
+const causale = f => 'ProntoNonni ' + f.nonno_name + ' ' + String(f.id).slice(0, 6).toUpperCase();
+const daysLeft = d => Math.round((new Date(d + 'T12:00') - new Date(dkey(new Date()) + 'T12:00')) / 864e5);
+function payBox() {
+  const f = S.fam, st = S.settings || {};
+  return `<div class="now blue" style="gap:6px"><div class="m">Rinnovo: ${esc(String(st.price || 20))} € all'anno</div>
+  <div>Paga con bonifico a <b>${esc(st.holder || 'D.E.X.I.A. SRL')}</b></div>
+  <div>IBAN: <b style="font-variant-numeric:tabular-nums;overflow-wrap:anywhere">${st.iban ? esc(st.iban) : 'in arrivo: scrivi a info@dexiasrl.it'}</b></div>
+  <div>Causale: <b>${esc(causale(f))}</b></div>
+  <div class="small">Appena riceviamo il bonifico attiviamo l'anno di abbonamento. Ti arriva un messaggio nella chat.</div></div>`;
+}
 const short = () => (S.fam ? S.fam.nonno_name : '').replace(/^nonn[oa]\s+/i, '');
 
 /* ---------- schermate di accesso ---------- */
@@ -373,7 +386,9 @@ function viewFamiglia() {
   <form class="add" data-form="settings"><label class="w">Nome dei nonni nell'app<input name="nonno" required value="${esc(f.nonno_name)}"></label><label class="w">Indirizzo (per DEXIA Service)<input name="address" value="${esc(f.address || '')}"></label>
   <p class="w small" style="margin:0">Richieste che vanno subito a DEXIA Service:</p>${NEEDS.map(n => `<label class="chk"><input type="checkbox" name="svc_${n[0]}"${(f.auto_service || []).includes(n[0]) ? ' checked' : ''}> ${n[1]}</label>`).join('')}
   <button class="btn fill w" type="submit">Salva</button></form>
-  <p class="small">${f.paid_until && f.paid_until >= dkey(new Date()) ? `Abbonamento attivo fino al ${esc(f.paid_until)}.` : `Prova gratuita fino al ${esc(f.trial_ends)}.`}</p>
+  <h2>Abbonamento</h2>
+  <p>${f.paid_until && f.paid_until >= dkey(new Date()) ? `Abbonamento attivo fino al <b>${esc(f.paid_until)}</b>.` : f.trial_ends >= dkey(new Date()) ? `Prova gratuita fino al <b>${esc(f.trial_ends)}</b> (ancora ${daysLeft(f.trial_ends)} giorni).` : '<b>Prova terminata.</b>'}</p>
+  ${!(f.paid_until && f.paid_until >= dkey(new Date())) && daysLeft(f.trial_ends) <= 10 || (f.paid_until && daysLeft(f.paid_until) <= 30) ? payBox() : '<p class="small">Dieci giorni prima della scadenza qui compaiono i dati per il bonifico.</p>'}
   <p><button class="btn" data-logout="1" type="button">Esci</button></p>`;
 }
 
@@ -387,6 +402,12 @@ function viewServizi() {
     ${r.status === 'fatta' ? '<span class="tag ok">Completata</span>' : r.svc === 'richiesta'
       ? `<form class="send" data-form="svctake" data-id="${esc(r.id)}" data-fam="${esc(r.family_id)}" style="margin:0"><input name="eta" type="time" required aria-label="Ora di arrivo" value="${fromMin(Math.min(1439, new Date().getHours() * 60 + new Date().getMinutes() + 60))}" style="flex:0 1 130px"><button type="submit">Prendo in carico</button></form>`
       : `<button class="btn fill" data-svcdone="${esc(r.id)}" data-fam="${esc(r.family_id)}" data-type="${esc(r.type)}" type="button">Completata</button>`}</div>`).join('') || '<p class="small">Nessuna richiesta.</p>'}
+  <h2>Abbonamenti</h2>
+  ${S.opFams.map(f => { const paid = f.paid_until && f.paid_until >= dkey(new Date()); const trial = f.trial_ends >= dkey(new Date());
+    return `<div class="row"><div class="grow"><b>${esc(f.nonno_name)}</b> · <span class="small">causale ${esc(causale(f))}</span><br><span class="small">${paid ? 'Pagato fino al ' + esc(f.paid_until) : trial ? 'In prova fino al ' + esc(f.trial_ends) : 'Prova scaduta il ' + esc(f.trial_ends)}</span></div>
+    <button class="btn${paid ? '' : ' fill'}" data-paid="${esc(f.id)}" data-name="${esc(f.nonno_name)}" type="button">Segna pagato (+1 anno)</button></div>`; }).join('') || '<p class="small">Nessuna famiglia iscritta.</p>'}
+  <h2>Dati per il bonifico</h2>
+  <form class="add" data-form="iban"><label class="w">Intestatario<input name="holder" required value="${esc(S.settings.holder || 'D.E.X.I.A. SRL')}"></label><label class="w">IBAN<input name="iban" required autocomplete="off" value="${esc(S.settings.iban || '')}" placeholder="IT.."></label><button class="btn fill w" type="submit">Salva</button></form>
   ${S.mem ? '' : '<p><button class="btn" data-logout="1" type="button">Esci</button></p>'}`;
 }
 
@@ -399,7 +420,7 @@ function render() {
   if (S.operator) tabs.push(['servizi', 'Servizi']);
   if (!tabs.some(t => t[0] === S.view)) S.view = tabs[0][0];
   tabsEl.innerHTML = tabs.length > 1 ? tabs.map(t => `<button type="button" data-view="${t[0]}"${t[0] === S.view ? ' aria-current="page"' : ''}>${t[1]}</button>`).join('') : '';
-  const banner = S.mem && !active() ? `<div class="banner">La prova gratuita è finita. ${C.paypalLink ? `<a href="${esc(C.paypalLink)}" target="_blank" rel="noopener">Rinnova con PayPal: 20 € all'anno</a>` : 'Scrivi a info@dexiasrl.it per rinnovare.'}</div>` : '';
+  const banner = S.mem && !active() ? `<div class="banner">La prova gratuita è finita. Rinnova con un bonifico di 20 € all'anno${S.mem.role !== 'nonno' ? ': trovi i dati in Famiglia → Abbonamento.' : '. Chiedi a un familiare.'}</div>` : '';
   app.innerHTML = banner + (S.view === 'servizi' ? viewServizi() : S.view === 'famiglia' ? viewFamiglia() : viewNonni());
   const c = document.getElementById('chat'); if (c) c.scrollTop = c.scrollHeight;
 }
@@ -430,6 +451,7 @@ app.addEventListener('click', async e => {
     else if (d.ok) { await run(sb.from('checkins').insert({ family_id: fid() }), 'Grazie! La famiglia vede che stai bene.'); await refresh(); }
     else if (d.quick) addMsg(d.quick, 'nonno');
     else if (d.mic) micClick(d.mic);
+    else if (d.paid) { ask('Pagamento ricevuto?', `<p style="margin:0">Confermi di aver ricevuto il bonifico di <b>${esc(d.name)}</b>? L'abbonamento si allunga di un anno.</p>`, 'Sì, segna pagato', async () => { const until = await run(sb.rpc('mark_paid', { p_family: d.paid })); await run(sb.from('messages').insert({ family_id: d.paid, author_id: S.user.id, author_name: 'DEXIA Service', kind: 'servizio', body: 'Grazie! Abbiamo ricevuto il pagamento: ProntoNonni è attivo fino al ' + until + '.' })); toast('Abbonamento attivo fino al ' + until + '.'); await refresh(); }); }
     else if (d.ai) askAI(d.ai);
     else if (d.aireset) { ai = []; try { localStorage.removeItem('pn-ai'); } catch (e) {} render(); }
     else if (d.mailoff) { await run(sb.from('families').update({ mail_consent: false }).eq('id', fid()), 'Posta scollegata.'); await refresh(); }
@@ -453,6 +475,7 @@ app.addEventListener('submit', async e => {
     else if (k === 'nonnocode') { const { error } = await sb.auth.signInAnonymously(); if (error) return toast('Accesso non riuscito: ' + error.message); await run(sb.rpc('join_family', { p_code: v.code, p_my_name: 'Telefono dei nonni' })); S.viewSet = false; await loadAll(); }
     else if (k === 'newfam') { await run(sb.rpc('create_family', { p_nonno_name: v.nonno.trim(), p_my_name: v.me.trim() }), 'Famiglia creata: 30 giorni di prova gratuita.'); S.viewSet = false; S.view = 'famiglia'; await loadAll(); }
     else if (k === 'join') { await run(sb.rpc('join_family', { p_code: v.code, p_my_name: v.me.trim() }), 'Sei entrato nella famiglia.'); S.viewSet = false; await loadAll(); }
+    else if (k === 'iban') { await run(sb.from('app_settings').update({ holder: v.holder.trim(), iban: v.iban.replace(/\s+/g, ' ').trim().toUpperCase() }).eq('id', 1), 'Dati del bonifico salvati.'); const st = await sb.from('app_settings').select('*').maybeSingle(); S.settings = st.data || {}; render(); }
     else if (k === 'ai') { if (v.text.trim()) askAI(v.text.trim()); }
     else if (k === 'mail') { await run(sb.from('families').update({ mail_address: v.addr.trim(), mail_consent: !!v.consent }).eq('id', fid()), 'Controllo della posta attivato.'); await refresh(); }
     else if (k === 'mailcheck') { mailBusy = true; render(); const data = await callFn({ family_id: fid(), mode: 'posta', text: v.text }); mailBusy = false; toast(data.item ? (data.item.kind === 'truffa' ? 'Possibile truffa: avvisati nonni e famiglia.' : 'Email controllata.') : data.error || 'Controllo non riuscito, riprova.'); await refresh(); }

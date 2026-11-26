@@ -8,16 +8,18 @@
 <link rel="manifest" href="/app/manifest.webmanifest">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&text=0123456789&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#fff;--ink:#151515;--soft:#f5f3ec;--line:#dedad0;--mute:#5c5a54;--sun:#ffcf33;--sunink:#1a1400;--sky:#2357c9;--skybg:#e8efff;--sos:#d93a24;--ok:#1f7a3d;--okbg:#e6f5ea}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;overflow-x:clip}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 "Lexend","Atkinson Hyperlegible",system-ui,sans-serif;overflow-x:clip}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 header{position:sticky;top:0;z-index:5;background:var(--sun);color:var(--sunink);display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px max(4vw,14px)}
 header b{font-size:22px;margin-inline-end:auto}
+header .tel{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:20px;padding:8px 14px;border-radius:999px;white-space:nowrap;min-height:44px}
 .seg{display:flex;background:rgba(0,0,0,.1);border-radius:999px;padding:4px}
 .seg button{border:0;background:none;padding:10px 16px;border-radius:999px;font-weight:700;min-height:44px}
 .seg button[aria-current]{background:#fff}
@@ -84,7 +86,7 @@ input[type=checkbox]{width:24px;min-height:24px}
 </style>
 </head>
 <body>
-<header><b>ProntoNonni</b><nav class="seg" id="tabs" aria-label="Vista"></nav></header>
+<header><b>ProntoNonni</b><a class="tel" href="tel:+3906485250" aria-label="Chiama DEXIA allo 06 485250">&#9742; 06 485250</a><nav class="seg" id="tabs" aria-label="Vista"></nav></header>
 <main id="app"><p class="sub">Caricamento…</p></main>
 <div class="sheet" id="sheet" role="status"></div>
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div>

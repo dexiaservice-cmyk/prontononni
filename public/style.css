@@ -4,7 +4,7 @@
 :root{--sun:#ffcf33;--sunink:#1a1400;--ink:#151515;--soft:#f5f3ec;--line:#dedad0;--mute:#5c5a54;--sky:#2357c9;--skybg:#e8efff;--sos:#d93a24;--ok:#1f7a3d}
 *{box-sizing:border-box;min-width:0}
 html{scroll-behavior:smooth;scroll-padding-top:80px}
-body{margin:0;background:#fff;color:var(--ink);font:18px/1.55 "Atkinson Hyperlegible",system-ui,sans-serif;overflow-x:clip}
+body{margin:0;background:#fff;color:var(--ink);font:18px/1.55 "Lexend","Atkinson Hyperlegible",system-ui,sans-serif;overflow-x:clip}
 a{color:var(--sky)}a:hover{color:#163f99}
 :focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 .wrap{max-width:1180px;margin:0 auto}
@@ -28,7 +28,10 @@ h3{font-size:23px;line-height:1.2;margin:0}
 .nav{display:flex;gap:20px;flex-wrap:wrap;font-weight:700}
 .nav a{color:var(--sunink);text-decoration:none;padding:10px 0}
 .top .btn{min-height:48px;padding:10px 20px;font-size:17px;border-radius:999px}
-@media(max-width:760px){.nav{display:none}}
+.tel{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:22px;padding:8px 18px;border-radius:999px;white-space:nowrap}
+.tel:hover{background:#333;color:#fff}
+.tel svg{width:22px;height:22px}
+@media(max-width:760px){.nav{display:none}.top .wrap{gap:10px}.tel{font-size:20px;padding:8px 14px}}
 
 /* hero */
 .hero{background:var(--sun);color:var(--sunink);padding:40px max(5vw,18px) 0;overflow:hidden}

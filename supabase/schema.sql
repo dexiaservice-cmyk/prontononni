@@ -33,7 +33,7 @@ create table public.family_members (
 );
 
 create table public.family_invites (
-  code        text primary key default upper(substr(encode(gen_random_bytes(6),'hex'),1,8)),
+  code        text primary key default upper(substr(replace(gen_random_uuid()::text,'-',''),1,8)),
   family_id   uuid not null references public.families(id) on delete cascade,
   role        text not null check (role in ('nonno','familiare')),
   created_by  uuid not null references auth.users(id),
@@ -167,6 +167,7 @@ returns uuid language plpgsql security definer set search_path = public as $$
 declare fid uuid;
 begin
   if auth.uid() is null then raise exception 'Accesso richiesto'; end if;
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then raise exception 'Per creare una famiglia serve un accesso con email'; end if;
   insert into families (nonno_name) values (p_nonno_name) returning id into fid;
   insert into family_members (family_id, user_id, role, display_name) values (fid, auth.uid(), 'admin', p_my_name);
   return fid;
@@ -231,7 +232,7 @@ create policy mem_read   on public.family_members for select using (is_member(fa
 create policy mem_admin  on public.family_members for delete using (is_admin(family_id));
 
 create policy inv_read   on public.family_invites for select using (is_member(family_id));
-create policy inv_create on public.family_invites for insert with check (is_member(family_id) and created_by = auth.uid());
+create policy inv_create on public.family_invites for insert with check (is_member(family_id) and created_by = auth.uid() and not coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false));
 
 create policy op_self on public.service_operators for select using (user_id = auth.uid());
 

@@ -391,6 +391,7 @@ function viewFamiglia() {
   <h2>Abbonamento</h2>
   <p>${f.paid_until && f.paid_until >= dkey(new Date()) ? `Abbonamento attivo fino al <b>${esc(f.paid_until)}</b>.` : f.trial_ends >= dkey(new Date()) ? `Prova gratuita fino al <b>${esc(f.trial_ends)}</b> (ancora ${daysLeft(f.trial_ends)} giorni).` : '<b>Prova terminata.</b>'}</p>
   ${!(f.paid_until && f.paid_until >= dkey(new Date())) && daysLeft(f.trial_ends) <= 10 || (f.paid_until && daysLeft(f.paid_until) <= 30) ? payBox() : '<p class="small">Dieci giorni prima della scadenza qui compaiono i dati per il bonifico.</p>'}
+  <p><a class="btn" style="background:#1f8f4e;border-color:#1f8f4e;color:#fff" href="https://wa.me/3906485250" target="_blank" rel="noopener">Scrivici su WhatsApp: 06 485250</a></p>
   <p><a class="btn" href="https://www.facebook.com/share/1CNVRVMiFZ/" target="_blank" rel="noopener">Seguici su Facebook</a></p>
   <p><button class="btn" data-logout="1" type="button">Esci</button></p>`;
 }

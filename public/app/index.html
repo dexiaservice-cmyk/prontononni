@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffcf33">
+<title>ProntoNonni</title>
+<link rel="manifest" href="/app/manifest.webmanifest">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--ink:#151515;--soft:#f5f3ec;--line:#dedad0;--mute:#5c5a54;--sun:#ffcf33;--sunink:#1a1400;--sky:#2357c9;--skybg:#e8efff;--sos:#d93a24;--ok:#1f7a3d;--okbg:#e6f5ea}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;overflow-x:clip}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+header{position:sticky;top:0;z-index:5;background:var(--sun);color:var(--sunink);display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px max(4vw,14px)}
+header b{font-size:22px;margin-inline-end:auto}
+.seg{display:flex;background:rgba(0,0,0,.1);border-radius:999px;padding:4px}
+.seg button{border:0;background:none;padding:10px 16px;border-radius:999px;font-weight:700;min-height:44px}
+.seg button[aria-current]{background:#fff}
+main{max-width:860px;margin:0 auto;padding:18px max(4vw,14px) 100px}
+h1{font-size:clamp(30px,7vw,46px);line-height:1.05;margin:8px 0 4px;text-wrap:balance}
+h2{font-size:25px;line-height:1.15;margin:34px 0 12px}
+.sub{color:var(--mute);margin:0 0 18px}
+.now{background:var(--sun);color:var(--sunink);border-radius:28px;padding:22px;display:grid;gap:10px;margin-bottom:16px}
+.now.blue{background:var(--skybg);color:var(--ink)}
+.now .t{font-size:clamp(56px,16vw,92px);font-weight:700;line-height:1}
+.now .m{font-size:26px;font-weight:700;line-height:1.2}
+.big{border:0;border-radius:20px;padding:18px 22px;font-size:23px;font-weight:700;min-height:70px;width:100%;background:#151515;color:#fff;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px}
+.big.sos{background:var(--sos);font-size:27px;min-height:86px}
+.list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.med{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--line);border-radius:18px}
+.med .h{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.med.done{background:var(--okbg);border-color:transparent}.med.late{border-color:var(--sos)}
+.tag{font-size:16px;font-weight:700}.tag.ok{color:var(--ok)}.tag.late{color:var(--sos)}
+.small{font-size:16px;color:var(--mute)}
+.btn{border:2px solid currentColor;background:transparent;border-radius:14px;padding:8px 14px;min-height:48px;font-weight:700}
+.btn.fill{background:#151515;color:#fff;border-color:#151515}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.call{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:var(--skybg);color:var(--sky);border-radius:22px;padding:18px 10px;text-decoration:none;min-height:140px;justify-content:center}
+.call .av{width:62px;height:62px;border-radius:50%;background:var(--sky);color:#fff;display:grid;place-items:center;font-size:27px;font-weight:700}
+.call b{font-size:21px;color:var(--ink)}
+.need{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--soft);border:2px solid var(--line);border-radius:22px;padding:18px 10px;min-height:120px;font-size:20px;font-weight:700}
+.need svg{width:42px;height:42px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--line)}
+.row .grow{flex:1 1 200px}
+.x{border:0;background:transparent;color:var(--mute);min-width:44px;min-height:44px;font-size:22px;border-radius:12px}
+form.add{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;background:var(--soft);padding:14px;border-radius:18px;margin-top:12px}
+form.add label{display:grid;gap:4px;font-size:15px;color:var(--mute)}
+form.add .w{grid-column:1/-1}
+input,select,textarea{font-size:16px;min-height:48px;padding:8px 12px;border:2px solid var(--line);border-radius:12px;background:#fff;width:100%}
+input[type=checkbox]{width:24px;min-height:24px}
+.chk{display:flex!important;align-items:center;gap:10px;color:var(--ink)!important}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:18px;padding:14px}.stat b{display:block;font-size:clamp(26px,6vw,36px);line-height:1.1}.stat.alert{background:var(--sun)}
+.chat{display:flex;flex-direction:column;gap:10px;padding:14px;background:var(--soft);border-radius:22px;max-height:460px;overflow-y:auto}
+.bub{max-width:85%;padding:12px 16px;border-radius:20px 20px 20px 6px;background:#fff;font-size:19px;line-height:1.35;align-self:flex-start;overflow-wrap:anywhere}
+.bub.me{align-self:flex-end;background:var(--skybg);border-radius:20px 20px 6px 20px}
+.bub.svc{background:var(--sun)}
+.bub small{display:block;font-size:14px;color:var(--mute)}
+.bub img,.bub video{display:block;max-width:100%;max-height:320px;border-radius:14px;margin-top:4px}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.quick button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:10px 16px;min-height:48px;font-size:17px;font-weight:700}
+.send{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.send input{flex:1 1 220px;font-size:18px;min-height:56px}
+.send button,.ico{min-height:56px;border-radius:14px;font-weight:700}
+.send button[type=submit]{border:0;padding:0 20px;background:var(--sky);color:#fff;font-size:18px}
+.ico{position:relative;min-width:56px;border:2px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer}
+.ico svg{width:26px;height:26px}.ico.on{background:var(--sos);border-color:var(--sos);color:#fff}
+.card{max-width:520px;margin:40px auto;display:grid;gap:14px}
+.code{font-size:44px;font-weight:700;letter-spacing:.12em;background:var(--sun);border-radius:18px;padding:14px;text-align:center}
+.banner{background:var(--sos);color:#fff;border-radius:18px;padding:14px 18px;margin-bottom:16px;font-weight:700}
+.banner a{color:#fff}
+.sheet{position:fixed;inset:auto 0 0 0;z-index:20;background:var(--ink);color:#fff;padding:16px max(4vw,16px) 20px;font-size:19px;transform:translateY(110%);transition:transform .25s}
+.sheet.on{transform:none}
+.modal{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.55);display:none;place-items:center;padding:16px}
+.modal.on{display:grid}.modal>div{background:#fff;border-radius:26px;padding:24px;max-width:460px;width:100%;display:grid;gap:12px}
+.modal h3{font-size:28px;margin:0}
+@media(max-width:600px){.stats{grid-template-columns:1fr 1fr}form.add{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.sheet{transition:none}}
+</style>
+</head>
+<body>
+<header><b>ProntoNonni</b><nav class="seg" id="tabs" aria-label="Vista"></nav></header>
+<main id="app"><p class="sub">Caricamento…</p></main>
+<div class="sheet" id="sheet" role="status"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div>
+  <h3 id="mTitle"></h3><div id="mBody"></div>
+  <button class="big" id="mOk" type="button">Sì</button>
+  <button class="btn" id="mNo" type="button">No, torna indietro</button>
+</div></div>
+
+<script src="/app/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+{
+/* ---------- utilità ---------- */
+const C = window.PN_CONFIG || {};
+const app = document.getElementById('app'), tabsEl = document.getElementById('tabs');
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const dkey = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const hm = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+const t5 = t => String(t || '').slice(0, 5);
+const toMin = t => { const [h, m] = String(t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+const fromMin = n => pad(Math.floor(n / 60) % 24) + ':' + pad(n % 60);
+const GG = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'], MM = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+const GIORNI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const relDay = ds => { const t = new Date(); const a = dkey(t); t.setDate(t.getDate() + 1); return ds === a ? 'Oggi' : ds === dkey(t) ? 'Domani' : ''; };
+const fmtAt = iso => { const d = new Date(iso); return (relDay(dkey(d)) || d.getDate() + ' ' + MM[d.getMonth()]) + ' alle ' + hm(d); };
+const telHref = p => 'tel:' + String(p).replace(/[^\d+]/g, '');
+const NEEDS = [
+  ['spesa', 'La spesa', '<path d="M6 9h20l-2 15H8z"/><path d="M11 9a5 5 0 0 1 10 0"/>'],
+  ['farmacia', 'Farmacia', '<rect x="5" y="5" width="22" height="22" rx="5"/><path d="M16 10v12M10 16h12"/>'],
+  ['passaggio', 'Un passaggio', '<path d="M5 20l3-8h16l3 8v5H5z"/><circle cx="10" cy="24" r="2"/><circle cx="22" cy="24" r="2"/>'],
+  ['compagnia', 'Compagnia', '<path d="M16 27S4 19 4 11a6 6 0 0 1 12-1 6 6 0 0 1 12 1c0 8-12 16-12 16z"/>'],
+  ['casa', 'Un lavoretto in casa', '<path d="M4 15L16 5l12 10"/><path d="M7 13v13h18V13"/><path d="M13 26v-7h6v7"/>'],
+  ['pulizie', 'Le pulizie', '<path d="M20 4l-6 12"/><path d="M8 16h12l3 11H5z"/>']
+];
+const needName = t => t === 'sos' ? 'Emergenza' : (NEEDS.find(n => n[0] === t) || [, 'Aiuto'])[1];
+const QUICK = ['Sto bene', 'Chiamami quando puoi', 'Ho preso le medicine', 'Grazie!', 'Ti voglio bene'];
+const ICAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13.5" r="3.8"/></svg>';
+const IMIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+
+let tTimer;
+function toast(msg) { const s = document.getElementById('sheet'); s.textContent = msg; s.classList.add('on'); clearTimeout(tTimer); tTimer = setTimeout(() => s.classList.remove('on'), 4500); }
+const modal = document.getElementById('modal'); let mAction = null;
+function ask(title, bodyHtml, okText, action) { document.getElementById('mTitle').textContent = title; document.getElementById('mBody').innerHTML = bodyHtml; document.getElementById('mOk').textContent = okText; mAction = action; modal.classList.add('on'); }
+document.getElementById('mOk').onclick = () => { modal.classList.remove('on'); if (mAction) mAction(); };
+document.getElementById('mNo').onclick = () => modal.classList.remove('on');
+
+if (!C.url || !C.anonKey || !window.supabase) {
+  app.innerHTML = '<div class="card"><h1>Quasi pronto</h1><p>L\'app non è ancora collegata al database. Inserisci Project URL e anon key in <b>app/config.js</b>.</p></div>';
+} else {
+const sb = window.supabase.createClient(C.url, C.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+
+/* ---------- stato ---------- */
+const S = { user: null, mem: null, operator: null, fam: null, meds: [], logs: [], contacts: [], appts: [], devices: [], checks: [], msgs: [], reqs: [], members: [], invites: [], opReqs: [], view: 'nonni', mediaUrls: {}, newCode: null };
+async function run(p, okMsg) { const { data, error } = await p; if (error) { toast('Qualcosa non va: ' + error.message); throw error; } if (okMsg) toast(okMsg); return data; }
+
+/* ---------- caricamento dati ---------- */
+async function loadAll() {
+  const { data: { user } } = await sb.auth.getUser(); S.user = user;
+  if (!user) return render();
+  const [mem, op] = await Promise.all([
+    sb.from('family_members').select('family_id, role, display_name').eq('user_id', user.id).limit(1),
+    sb.from('service_operators').select('display_name').eq('user_id', user.id).maybeSingle()
+  ]);
+  S.mem = (mem.data || [])[0] || null; S.operator = op.data || null;
+  if (S.mem) await loadFamily();
+  if (S.operator) await loadOperator();
+  if (!S.viewSet) { S.view = S.mem ? (S.mem.role === 'nonno' ? 'nonni' : 'famiglia') : (S.operator ? 'servizi' : 'nonni'); S.viewSet = true; }
+  subscribe(); render();
+}
+async function loadFamily() {
+  const f = S.mem.family_id, since = new Date(); since.setDate(since.getDate() - 7);
+  const q = (t, sel = '*') => sb.from(t).select(sel).eq('family_id', f);
+  const [fam, meds, logs, contacts, appts, devices, checks, msgs, reqs, members, invites] = await Promise.all([
+    sb.from('families').select('*').eq('id', f).single(),
+    q('meds').order('at_time'), q('med_logs').gte('day', dkey(since)), q('contacts').order('name'),
+    q('appointments').gte('day', dkey(new Date())).order('day').order('at_time'), q('devices'),
+    q('checkins').gte('at', dkey(new Date())).order('at', { ascending: false }),
+    q('messages').order('created_at', { ascending: false }).limit(60),
+    q('requests').order('created_at', { ascending: false }).limit(30),
+    q('family_members', 'user_id, role, display_name'),
+    q('family_invites').is('used_at', null).gt('expires_at', new Date().toISOString())
+  ]);
+  Object.assign(S, { fam: fam.data, meds: meds.data || [], logs: logs.data || [], contacts: contacts.data || [], appts: appts.data || [], devices: devices.data || [], checks: checks.data || [], msgs: (msgs.data || []).reverse(), reqs: reqs.data || [], members: members.data || [], invites: invites.data || [] });
+  await signMedia();
+}
+async function loadOperator() {
+  const { data } = await sb.from('requests').select('*, families(nonno_name, address, zone)').not('svc', 'is', null).order('created_at', { ascending: false }).limit(100);
+  S.opReqs = data || [];
+}
+async function signMedia() {
+  const need = S.msgs.filter(m => m.media_path && !S.mediaUrls[m.media_path]).map(m => m.media_path);
+  if (!need.length) return;
+  const { data } = await sb.storage.from('media').createSignedUrls(need, 3600);
+  (data || []).forEach(x => { if (x.signedUrl) S.mediaUrls[x.path] = x.signedUrl; });
+}
+let chan, reloadT;
+function subscribe() {
+  if (chan) return;
+  const again = () => { clearTimeout(reloadT); reloadT = setTimeout(async () => { if (S.mem) await loadFamily(); if (S.operator) await loadOperator(); if (!busy()) render(); }, 400); };
+  chan = sb.channel('pn');
+  if (S.mem) ['messages', 'requests', 'checkins', 'med_logs'].forEach(t => chan.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: 'family_id=eq.' + S.mem.family_id }, again));
+  if (S.operator) chan.on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, again);
+  chan.subscribe();
+}
+const busy = () => modal.classList.contains('on') || (document.activeElement && app.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) || dictOn;
+
+/* ---------- calcoli ---------- */
+const takenToday = id => S.logs.find(l => l.med_id === id && l.day === dkey(new Date()));
+function medStatus(m) {
+  const tk = takenToday(m.id);
+  if (tk) return { cls: 'done', label: 'Presa alle ' + hm(new Date(tk.taken_at)) };
+  const n = new Date(); return n.getHours() * 60 + n.getMinutes() > toMin(m.at_time) + 30 ? { cls: 'late', label: 'Da prendere' } : { cls: '', label: '' };
+}
+function soloInfo() {
+  const f = S.fam; if (!f || !f.solo_on) return null;
+  const now = new Date(), n = now.getHours() * 60 + now.getMinutes(), a = toMin(f.solo_from), b = toMin(f.solo_to);
+  const last = S.checks[0] ? new Date(S.checks[0].at) : null, lm = last ? last.getHours() * 60 + last.getMinutes() : -1;
+  const due = Math.max(a, lm) + (f.solo_every || 60);
+  return { inWin: n >= a && n <= b, last: last ? hm(last) : '', due: fromMin(due), overdue: n >= a && n <= b + 10 && n > due + 10 };
+}
+function reqStatus(r) {
+  if (r.status === 'fatta') return r.svc ? 'Fatta da DEXIA Service' : 'Fatta';
+  if (r.svc === 'presa') return 'DEXIA Service arriva' + (r.svc_eta ? ' alle ' + t5(r.svc_eta) : '');
+  if (r.svc === 'richiesta') return 'Inviata a DEXIA Service, in attesa di conferma';
+  return r.claimed_by ? 'Ci pensa ' + r.claimed_by : 'In attesa: nessuno se ne occupa ancora';
+}
+const active = () => S.fam && ((S.fam.paid_until && S.fam.paid_until >= dkey(new Date())) || S.fam.trial_ends >= dkey(new Date()));
+const short = () => (S.fam ? S.fam.nonno_name : '').replace(/^nonn[oa]\s+/i, '');
+
+/* ---------- schermate di accesso ---------- */
+function viewLogin() {
+  return `<div class="card"><h1>Benvenuti in ProntoNonni</h1>
+  <h2>Sono un familiare</h2><p class="small" style="margin:0">Ti mandiamo un'email con il link per entrare, senza password.</p>
+  <form data-form="login" class="add" style="grid-template-columns:1fr"><label>La tua email<input name="email" type="email" required autocomplete="email"></label><button class="btn fill" type="submit">Mandami il link</button></form>
+  <h2>Questo è il telefono dei nonni</h2><p class="small" style="margin:0">Inserisci il codice che un familiare ha creato nell'app.</p>
+  <form data-form="nonnocode" class="add" style="grid-template-columns:1fr"><label>Codice<input name="code" required autocomplete="off" style="font-size:28px;letter-spacing:.1em;text-transform:uppercase"></label><button class="btn fill" type="submit">Entra</button></form></div>`;
+}
+function viewOnboard() {
+  return `<div class="card"><h1>Iniziamo</h1><p>Sei entrato come <b>${esc(S.user.email || 'utente')}</b>.</p>
+  <h2>Crea la famiglia</h2>
+  <form data-form="newfam" class="add" style="grid-template-columns:1fr"><label>Come chiamate i nonni?<input name="nonno" required placeholder="Es. Nonna Lucia"></label><label>Il tuo nome<input name="me" required placeholder="Es. Diego"></label><button class="btn fill" type="submit">Crea e inizia la prova di 30 giorni</button></form>
+  <h2>Ho un codice d'invito</h2>
+  <form data-form="join" class="add" style="grid-template-columns:1fr"><label>Codice<input name="code" required autocomplete="off" style="text-transform:uppercase"></label><label>Il tuo nome<input name="me" required></label><button class="btn fill" type="submit">Entra nella famiglia</button></form>
+  <p><button class="btn" data-logout="1" type="button">Esci</button></p></div>`;
+}
+
+/* ---------- vista nonni ---------- */
+const meName = () => (S.mem && S.mem.display_name) || 'Famiglia';
+function chat(nonnoView, n) {
+  const list = S.msgs.slice(-n);
+  return `<div class="chat" id="chat">${list.length ? list.map(m => {
+    const mine = nonnoView ? m.kind === 'nonno' : m.author_id === S.user.id;
+    const url = m.media_path && S.mediaUrls[m.media_path];
+    return `<div class="bub ${mine ? 'me' : ''} ${m.kind === 'servizio' || m.kind === 'posta' ? 'svc' : ''}"><small>${esc(m.author_name)} · ${esc(fmtAt(m.created_at))}</small>${esc(m.body || '')}${url ? (m.media_type === 'video' ? `<video src="${esc(url)}" controls playsinline preload="metadata"></video>` : `<img src="${esc(url)}" alt="Foto da ${esc(m.author_name)}" loading="lazy">`) : ''}</div>`;
+  }).join('') : '<p class="small" style="margin:0">Ancora nessun messaggio.</p>'}</div>`;
+}
+function sendForm(key, ph) {
+  return `<form class="send" data-form="${key}"><input name="text" aria-label="${esc(ph)}" placeholder="${esc(ph)}" autocomplete="off">
+    <label class="ico" title="Foto o video" aria-label="Manda una foto o un video">${ICAM}<input type="file" accept="image/*,video/*" data-cam="${key}" style="position:absolute;width:1px;height:1px;opacity:0"></label>
+    ${SR ? `<button class="ico${dictOn && dictKey === key ? ' on' : ''}" data-mic="${key}" type="button" aria-label="Parla invece di scrivere">${IMIC}</button>` : ''}
+    <button type="submit">Invia</button></form>`;
+}
+function viewNonni() {
+  const now = new Date(), si = soloInfo();
+  const next = S.meds.find(m => !takenToday(m.id));
+  const saluto = now.getHours() < 13 ? 'Buongiorno' : now.getHours() < 18 ? 'Buon pomeriggio' : 'Buonasera';
+  const myReqs = S.reqs.filter(r => r.type !== 'sos' && (r.status !== 'fatta' || r.created_at.slice(0, 10) === dkey(now))).slice(0, 3);
+  return `<h1>${saluto}, ${esc(short())}</h1>
+  <p class="sub">${GIORNI[now.getDay()]} ${now.getDate()} ${MESI[now.getMonth()]} · ore ${hm(now)}</p>
+  ${si && si.inWin ? `<section class="now blue"><div class="m">Tutto bene?</div><div>Tocca il tasto ogni tanto: così la famiglia sa che stai bene.${si.last ? ` Ultima volta alle ${esc(si.last)}.` : ''}</div><button class="big" data-ok="1" type="button">Sto bene</button></section>` : ''}
+  ${next ? `<section class="now"><div>Prossima medicina</div><div class="t">${esc(t5(next.at_time))}</div><div class="m">${esc(next.name)} · ${esc(next.dose)}</div>${next.note ? `<div>${esc(next.note)}</div>` : ''}<button class="big" data-take="${esc(next.id)}" type="button">Ho preso la medicina</button></section>`
+    : S.meds.length ? '<section class="now"><div class="m">Tutte le medicine di oggi sono state prese. Brava!</div></section>' : ''}
+  ${S.meds.length ? `<h2>Medicine di oggi</h2><ul class="list">${S.meds.map(m => { const st = medStatus(m); return `<li class="med ${st.cls}"><span class="h">${esc(t5(m.at_time))}</span><span><b>${esc(m.name)}</b><br><span class="small">${esc(m.dose)}</span>${st.label ? `<br><span class="tag ${st.cls === 'done' ? 'ok' : 'late'}">${esc(st.label)}</span>` : ''}</span>${st.cls === 'done' ? '' : `<button class="btn fill" data-take="${esc(m.id)}" type="button">Presa</button>`}</li>`; }).join('')}</ul>` : ''}
+  <h2>Chiama</h2>
+  <div class="grid">${S.contacts.map(c => `<a class="call" href="${esc(telHref(c.phone))}"><span class="av" aria-hidden="true">${esc((c.name.replace(/^(dott\.?|dr\.?)\s*/i, '')[0] || '?').toUpperCase())}</span><b>${esc(c.name)}</b><span>${esc(c.phone)}</span></a>`).join('') || '<p class="small">La famiglia non ha ancora inserito i numeri.</p>'}</div>
+  <p></p><button class="big sos" id="sosBtn" type="button">Emergenza</button>
+  ${S.devices.length ? `<p class="small">In casa sono collegati: ${S.devices.map(d => esc(d.name)).join(', ')}. La famiglia può vederli dal telefono.</p>` : ''}
+  <h2>Messaggi della famiglia</h2>${chat(true, 8)}
+  <div class="quick">${QUICK.map(q => `<button data-quick="${esc(q)}" type="button">${esc(q)}</button>`).join('')}</div>
+  ${sendForm('msg-n', 'Scrivi un messaggio')}
+  <h2>Ho bisogno di…</h2>
+  <div class="grid">${NEEDS.map(n => `<button class="need" data-need="${n[0]}" type="button"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${n[2]}</svg>${n[1]}</button>`).join('')}</div>
+  ${myReqs.length ? `<h2>Le tue richieste</h2><ul class="list">${myReqs.map(r => `<li class="med ${r.status === 'fatta' ? 'done' : ''}" style="grid-template-columns:1fr"><span><b>${esc(needName(r.type))}</b><br><span class="tag ${r.status === 'fatta' ? 'ok' : ''}">${esc(reqStatus(r))}</span></span></li>`).join('')}</ul>` : ''}
+  <h2>Prossimi appuntamenti</h2>${S.appts.slice(0, 3).map(a => apptRow(a)).join('') || '<p class="small">Nessun appuntamento in programma.</p>'}
+  <p class="small" style="margin-top:30px">In caso di emergenza chiama sempre il 112.</p>`;
+}
+function apptRow(a, fam) {
+  const d = new Date(a.day + 'T12:00'), r = relDay(a.day);
+  return `<div class="row"><div style="background:var(--soft);border-radius:14px;padding:6px 12px;text-align:center;line-height:1.1;min-width:76px">${r ? `<span class="small">${r}</span>` : esc(GG[d.getDay()])}<b style="display:block;font-size:28px">${d.getDate()}</b>${esc(MM[d.getMonth()])}</div>
+  <div class="grow"><b style="font-size:20px">${esc(a.title)}</b><br>ore <b>${esc(t5(a.at_time))}</b>${a.place ? ' · ' + esc(a.place) : ''}${a.companion ? `<br><span class="small">Accompagna ${esc(a.companion)}</span>` : ''}</div>
+  ${fam ? `<button class="x" data-del="appointments" data-id="${esc(a.id)}" aria-label="Elimina appuntamento" type="button">×</button>` : ''}</div>`;
+}
+
+/* ---------- vista famiglia ---------- */
+function viewFamiglia() {
+  const f = S.fam, si = soloInfo(), late = S.meds.filter(m => medStatus(m).cls === 'late');
+  const open = S.reqs.filter(r => r.status !== 'fatta'), admin = S.mem.role === 'admin';
+  const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); return dkey(d); });
+  return `
+  ${si && si.overdue ? `<div class="banner">Nessun "Sto bene" dopo le ${esc(si.due)}: prova a chiamare ${esc(f.nonno_name)}.</div>` : ''}
+  <h1>${esc(f.nonno_name)}: come va oggi</h1>
+  <p class="sub">${late.length ? `Attenzione: ${late.map(m => esc(m.name)).join(', ')} non ancora ${late.length > 1 ? 'prese' : 'presa'}.` : 'Nessuna medicina in ritardo.'}</p>
+  <div class="stats"><div class="stat ${late.length ? 'alert' : ''}"><b>${S.meds.filter(m => takenToday(m.id)).length}/${S.meds.length}</b>medicine prese</div><div class="stat ${open.length ? 'alert' : ''}"><b>${open.length}</b>richieste aperte</div><div class="stat"><b>${S.appts[0] ? (relDay(S.appts[0].day) || new Date(S.appts[0].day + 'T12:00').getDate() + ' ' + MM[new Date(S.appts[0].day + 'T12:00').getMonth()]) : '—'}</b>${S.appts[0] ? esc(S.appts[0].title) : 'nessun appuntamento'}</div></div>
+
+  <h2>Messaggi</h2>${chat(false, 40)}${sendForm('msg-f', 'Scrivi a ' + f.nonno_name)}
+
+  <h2>Richieste di aiuto</h2>
+  ${S.reqs.map(r => `<div class="row"><div class="grow"><b>${esc(needName(r.type))}</b><br><span class="small">${esc(fmtAt(r.created_at))} · ${esc(reqStatus(r))}</span></div>
+    ${r.status === 'fatta' ? '<span class="tag ok">Fatta</span>' : `${r.claimed_by || r.svc ? '' : `<button class="btn" data-claim="${esc(r.id)}" type="button">Ci penso io</button>${r.type !== 'sos' ? `<button class="btn" data-svc="${esc(r.id)}" type="button">Affida a DEXIA Service</button>` : ''}`}<button class="btn fill" data-done="${esc(r.id)}" type="button">Fatta</button>`}</div>`).join('') || '<p class="small">Nessuna richiesta.</p>'}
+
+  <h2>Medicine</h2>
+  ${S.meds.map(m => `<div class="row"><b style="font-size:21px">${esc(t5(m.at_time))}</b><div class="grow"><b>${esc(m.name)}</b> · ${esc(m.dose)}${m.note ? `<br><span class="small">${esc(m.note)}</span>` : ''}</div><button class="x" data-del="meds" data-id="${esc(m.id)}" aria-label="Elimina ${esc(m.name)}" type="button">×</button></div>`).join('')}
+  <form class="add" data-form="meds"><label>Nome<input name="name" required></label><label>Quantità<input name="dose" required placeholder="1 compressa"></label><label>Ora<input name="at_time" type="time" required value="08:00"></label><label>Nota<input name="note"></label><button class="btn fill w" type="submit">Aggiungi medicina</button></form>
+  ${S.meds.length ? `<h2>Ultimi 7 giorni</h2><div style="display:grid;grid-template-columns:minmax(0,1fr) repeat(7,28px);gap:6px;align-items:center;font-size:15px"><span></span>${days.map(d => `<span class="small" style="text-align:center">${GG[new Date(d + 'T12:00').getDay()].slice(0, 2)}</span>`).join('')}${S.meds.map(m => `<span>${esc(m.name)}</span>${days.map(d => `<span style="width:24px;height:24px;border-radius:50%;background:${S.logs.some(l => l.med_id === m.id && l.day === d) ? 'var(--ok)' : 'var(--line)'}" title="${d}"></span>`).join('')}`).join('')}</div>` : ''}
+
+  <h2>Appuntamenti</h2>${S.appts.map(a => apptRow(a, true)).join('') || '<p class="small">Nessun appuntamento.</p>'}
+  <form class="add" data-form="appointments"><label>Giorno<input name="day" type="date" required value="${dkey(new Date())}"></label><label>Ora<input name="at_time" type="time" required value="10:00"></label><label class="w">Cosa<input name="title" required></label><label>Dove<input name="place"></label><label>Chi accompagna<input name="companion"></label><button class="btn fill w" type="submit">Aggiungi appuntamento</button></form>
+
+  <h2>Contatti</h2>
+  ${S.contacts.map(c => `<div class="row"><div class="grow"><b>${esc(c.name)}</b> · ${esc(c.rel || '')}<br><span class="small">${esc(c.phone)}</span>${c.sos ? ' <span class="tag late">SOS</span>' : ''}</div><button class="x" data-del="contacts" data-id="${esc(c.id)}" aria-label="Elimina ${esc(c.name)}" type="button">×</button></div>`).join('')}
+  <form class="add" data-form="contacts"><label>Nome<input name="name" required></label><label>Chi è<input name="rel"></label><label>Telefono<input name="phone" type="tel" required></label><label class="chk"><input name="sos" type="checkbox"> Da chiamare in emergenza</label><button class="btn fill w" type="submit">Aggiungi contatto</button></form>
+
+  <h2>Quando è da sola in casa</h2>
+  ${si ? `<p>${si.inWin ? (si.overdue ? `<b class="tag late" style="font-size:18px">Nessun "Sto bene" dopo le ${esc(si.due)}.</b>` : `Controllo in corso. ${si.last ? `Ultimo "Sto bene" alle <b>${esc(si.last)}</b>. ` : ''}Prossimo entro le <b>${esc(si.due)}</b>.`) : `Controllo attivo dalle ${esc(t5(f.solo_from))} alle ${esc(t5(f.solo_to))}.`}</p>` : '<p class="small">Imposta le ore in cui resta da sola: l\'app le chiederà ogni tanto di toccare "Sto bene".</p>'}
+  <form class="add" data-form="solo"><label>Dalle<input name="from" type="time" required value="${esc(t5(f.solo_from))}"></label><label>Alle<input name="to" type="time" required value="${esc(t5(f.solo_to))}"></label><label class="w">Chiedi "Sto bene" ogni<select name="every">${[30, 60, 90, 120].map(m => `<option value="${m}"${f.solo_every === m ? ' selected' : ''}>${m} minuti</option>`).join('')}</select></label><button class="btn fill w" type="submit">${f.solo_on ? 'Aggiorna' : 'Attiva il controllo'}</button>${f.solo_on ? '<button class="btn w" data-solooff="1" type="button">Disattiva</button>' : ''}</form>
+
+  <h2>Telecamere e citofono</h2>
+  ${S.devices.map(d => `<div class="row"><div class="grow"><b>${esc(d.name)}</b> · ${esc(d.app)}${d.note ? `<br><span class="small">${esc(d.note)}</span>` : ''}</div>${/^https:\/\//.test(d.link || '') ? `<a class="btn fill" style="text-decoration:none;display:flex;align-items:center" href="${esc(d.link)}" target="_blank" rel="noopener">Apri l'app</a>` : ''}<button class="x" data-del="devices" data-id="${esc(d.id)}" aria-label="Elimina ${esc(d.name)}" type="button">×</button></div>`).join('') || '<p class="small">Nessun dispositivo.</p>'}
+  <form class="add" data-form="devices"><label>Nome<input name="name" required placeholder="Citofono ingresso"></label><label>App<input name="app" required placeholder="Urmet CallMe"></label><label class="w">Link all'app (facoltativo)<input name="link" type="url" placeholder="https://"></label><label class="w">Nota<input name="note"></label><button class="btn fill w" type="submit">Aggiungi dispositivo</button></form>
+
+  <h2>Famiglia e inviti</h2>
+  ${S.members.map(m => `<div class="row"><div class="grow"><b>${esc(m.display_name)}</b> · ${m.role === 'nonno' ? 'telefono dei nonni' : m.role === 'admin' ? 'amministratore' : 'familiare'}</div></div>`).join('')}
+  ${S.newCode ? `<p style="margin-top:16px">Codice da usare entro 7 giorni (${S.newCode.role === 'nonno' ? 'sul telefono dei nonni' : 'per un familiare'}):</p><div class="code">${esc(S.newCode.code)}</div><p class="small">${S.newCode.role === 'nonno' ? 'Sul telefono dei nonni apri prontononni.it/app, scegli "Questo è il telefono dei nonni" e scrivi il codice.' : 'Il familiare apre prontononni.it/app, entra con la sua email e sceglie "Ho un codice d\'invito".'}</p>` : ''}
+  <div class="quick"><button data-invite="nonno" type="button">Collega il telefono dei nonni</button><button data-invite="familiare" type="button">Invita un familiare</button></div>
+
+  <h2>Impostazioni</h2>
+  <form class="add" data-form="settings"><label class="w">Nome dei nonni nell'app<input name="nonno" required value="${esc(f.nonno_name)}"></label><label class="w">Indirizzo (per DEXIA Service)<input name="address" value="${esc(f.address || '')}"></label>
+  <p class="w small" style="margin:0">Richieste che vanno subito a DEXIA Service:</p>${NEEDS.map(n => `<label class="chk"><input type="checkbox" name="svc_${n[0]}"${(f.auto_service || []).includes(n[0]) ? ' checked' : ''}> ${n[1]}</label>`).join('')}
+  <button class="btn fill w" type="submit">Salva</button></form>
+  <p class="small">${f.paid_until && f.paid_until >= dkey(new Date()) ? `Abbonamento attivo fino al ${esc(f.paid_until)}.` : `Prova gratuita fino al ${esc(f.trial_ends)}.`}</p>
+  <p><button class="btn" data-logout="1" type="button">Esci</button></p>`;
+}
+
+/* ---------- vista DEXIA Service ---------- */
+function viewServizi() {
+  const L = S.opReqs, open = L.filter(r => r.status !== 'fatta');
+  return `<h1>DEXIA Service: richieste</h1><p class="sub">Operatore: ${esc(S.operator.display_name)}</p>
+  <div class="stats"><div class="stat ${open.some(r => r.svc === 'richiesta') ? 'alert' : ''}"><b>${open.filter(r => r.svc === 'richiesta').length}</b>da confermare</div><div class="stat"><b>${open.filter(r => r.svc === 'presa').length}</b>in corso</div><div class="stat"><b>${L.length - open.length}</b>completate</div></div>
+  <h2>Richieste</h2>
+  ${L.map(r => `<div class="row" style="align-items:flex-start"><div class="grow"><b style="font-size:20px">${esc(needName(r.type))}</b> · ${esc(r.families ? r.families.nonno_name : '')}${r.families && r.families.address ? `<br><span class="small">${esc(r.families.address)}</span>` : ''}<br><span class="small">${esc(fmtAt(r.created_at))} · ${esc(reqStatus(r))}</span></div>
+    ${r.status === 'fatta' ? '<span class="tag ok">Completata</span>' : r.svc === 'richiesta'
+      ? `<form class="send" data-form="svctake" data-id="${esc(r.id)}" data-fam="${esc(r.family_id)}" style="margin:0"><input name="eta" type="time" required aria-label="Ora di arrivo" value="${fromMin(Math.min(1439, new Date().getHours() * 60 + new Date().getMinutes() + 60))}" style="flex:0 1 130px"><button type="submit">Prendo in carico</button></form>`
+      : `<button class="btn fill" data-svcdone="${esc(r.id)}" data-fam="${esc(r.family_id)}" data-type="${esc(r.type)}" type="button">Completata</button>`}</div>`).join('') || '<p class="small">Nessuna richiesta.</p>'}
+  ${S.mem ? '' : '<p><button class="btn" data-logout="1" type="button">Esci</button></p>'}`;
+}
+
+/* ---------- disegno ---------- */
+function render() {
+  if (!S.user) { tabsEl.innerHTML = ''; app.innerHTML = viewLogin(); return; }
+  if (!S.mem && !S.operator) { tabsEl.innerHTML = ''; app.innerHTML = viewOnboard(); return; }
+  const tabs = [];
+  if (S.mem) { tabs.push(['nonni', 'Nonni']); if (S.mem.role !== 'nonno') tabs.push(['famiglia', 'Famiglia']); }
+  if (S.operator) tabs.push(['servizi', 'Servizi']);
+  if (!tabs.some(t => t[0] === S.view)) S.view = tabs[0][0];
+  tabsEl.innerHTML = tabs.length > 1 ? tabs.map(t => `<button type="button" data-view="${t[0]}"${t[0] === S.view ? ' aria-current="page"' : ''}>${t[1]}</button>`).join('') : '';
+  const banner = S.mem && !active() ? `<div class="banner">La prova gratuita è finita. ${C.paypalLink ? `<a href="${esc(C.paypalLink)}" target="_blank" rel="noopener">Rinnova con PayPal: 20 € all'anno</a>` : 'Scrivi a info@dexiasrl.it per rinnovare.'}</div>` : '';
+  app.innerHTML = banner + (S.view === 'servizi' ? viewServizi() : S.view === 'famiglia' ? viewFamiglia() : viewNonni());
+  const c = document.getElementById('chat'); if (c) c.scrollTop = c.scrollHeight;
+}
+
+/* ---------- azioni ---------- */
+const fid = () => S.mem.family_id;
+const refresh = async () => { if (S.mem) await loadFamily(); if (S.operator) await loadOperator(); render(); };
+async function addMsg(body, kind, media) {
+  await run(sb.from('messages').insert({ family_id: fid(), author_id: S.user.id, author_name: kind === 'nonno' ? S.fam.nonno_name : meName(), kind, body: body || null, ...(media || {}) }));
+  await refresh();
+}
+async function sendMedia(input) {
+  const f = input.files && input.files[0], kind = input.dataset.cam === 'msg-n' ? 'nonno' : 'famiglia'; input.value = '';
+  if (!f) return; if (f.size > 20 * 1024 * 1024) return toast('Il file è troppo grande: massimo 20 MB.');
+  toast('Sto inviando…');
+  const path = fid() + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ((f.name.split('.').pop() || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 5) || 'jpg');
+  await run(sb.storage.from('media').upload(path, f, { contentType: f.type }));
+  await addMsg('', kind, { media_path: path, media_type: f.type.startsWith('video') ? 'video' : 'image' });
+  toast(f.type.startsWith('video') ? 'Video inviato.' : 'Foto inviata.');
+}
+
+app.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return; const d = b.dataset;
+  try {
+    if (d.view) { S.view = d.view; render(); window.scrollTo(0, 0); }
+    else if (d.logout) { await sb.auth.signOut(); location.reload(); }
+    else if (d.take) { await run(sb.from('med_logs').upsert({ family_id: fid(), med_id: d.take, day: dkey(new Date()) }), 'Perfetto, medicina segnata come presa.'); await refresh(); }
+    else if (d.ok) { await run(sb.from('checkins').insert({ family_id: fid() }), 'Grazie! La famiglia vede che stai bene.'); await refresh(); }
+    else if (d.quick) addMsg(d.quick, 'nonno');
+    else if (d.mic) micClick(d.mic);
+    else if (d.need) { const sv = (S.fam.auto_service || []).includes(d.need); ask(needName(d.need) + '?', `<p style="font-size:20px;margin:0">${sv ? 'Mando la richiesta al centro servizi DEXIA Service e avviso la famiglia.' : 'Mando la richiesta alla famiglia.'} Qualcuno ti chiamerà.</p>`, 'Sì, invia', async () => { await run(sb.from('requests').insert({ family_id: fid(), type: d.need, svc: sv ? 'richiesta' : null }), 'Richiesta inviata.'); await refresh(); }); }
+    else if (b.id === 'sosBtn') { const sos = S.contacts.filter(c => c.sos); ask('Emergenza', `<div class="list"><a class="big sos" href="tel:112">Chiama il 112</a>${sos.map(c => `<a class="big" style="background:var(--sky)" href="${esc(telHref(c.phone))}">Chiama ${esc(c.name)}</a>`).join('')}</div>`, 'Avvisa anche la famiglia', async () => { await run(sb.from('requests').insert({ family_id: fid(), type: 'sos' })); await addMsg('Ho premuto il tasto Emergenza', 'nonno'); toast('Ho avvisato la famiglia.'); }); }
+    else if (d.claim) { await run(sb.from('requests').update({ claimed_by: meName() }).eq('id', d.claim), 'Segnato: ci pensi tu.'); await refresh(); }
+    else if (d.svc) { await run(sb.from('requests').update({ svc: 'richiesta', claimed_by: null }).eq('id', d.svc), 'Affidata a DEXIA Service.'); await refresh(); }
+    else if (d.done) { await run(sb.from('requests').update({ status: 'fatta' }).eq('id', d.done), 'Richiesta segnata come fatta.'); await refresh(); }
+    else if (d.del) { ask('Eliminare?', '<p style="margin:0">Questa voce verrà eliminata.</p>', 'Sì, elimina', async () => { await run(sb.from(d.del).delete().eq('id', d.id), 'Eliminato.'); await refresh(); }); }
+    else if (d.solooff) { await run(sb.from('families').update({ solo_on: false }).eq('id', fid()), 'Controllo disattivato.'); await refresh(); }
+    else if (d.invite) { const r = await run(sb.from('family_invites').insert({ family_id: fid(), role: d.invite, created_by: S.user.id }).select('code, role').single()); S.newCode = r; render(); }
+    else if (d.svcdone) { await run(sb.from('requests').update({ status: 'fatta' }).eq('id', d.svcdone)); await run(sb.from('messages').insert({ family_id: d.fam, author_id: S.user.id, author_name: 'DEXIA Service', kind: 'servizio', body: 'Abbiamo completato: ' + needName(d.type).toLowerCase() + '. Grazie!' }), 'Richiesta completata.'); await refresh(); }
+  } catch (err) { console.error(err); }
+});
+app.addEventListener('change', e => { if (e.target.dataset && e.target.dataset.cam) sendMedia(e.target).catch(console.error); });
+app.addEventListener('submit', async e => {
+  e.preventDefault(); const f = e.target, k = f.dataset.form, v = Object.fromEntries(new FormData(f));
+  if (dictOn) stopMic();
+  try {
+    if (k === 'login') { await run(sb.auth.signInWithOtp({ email: v.email.trim(), options: { emailRedirectTo: location.origin + '/app/' } })); app.innerHTML = `<div class="card"><h1>Controlla la posta</h1><p>Ti abbiamo mandato un link a <b>${esc(v.email)}</b>. Aprilo da questo telefono per entrare.</p></div>`; }
+    else if (k === 'nonnocode') { const { error } = await sb.auth.signInAnonymously(); if (error) return toast('Accesso non riuscito: ' + error.message); await run(sb.rpc('join_family', { p_code: v.code, p_my_name: 'Telefono dei nonni' })); S.viewSet = false; await loadAll(); }
+    else if (k === 'newfam') { await run(sb.rpc('create_family', { p_nonno_name: v.nonno.trim(), p_my_name: v.me.trim() }), 'Famiglia creata: 30 giorni di prova gratuita.'); S.viewSet = false; S.view = 'famiglia'; await loadAll(); }
+    else if (k === 'join') { await run(sb.rpc('join_family', { p_code: v.code, p_my_name: v.me.trim() }), 'Sei entrato nella famiglia.'); S.viewSet = false; await loadAll(); }
+    else if (k === 'msg-n' || k === 'msg-f') { if (v.text.trim()) await addMsg(v.text.trim().slice(0, 2000), k === 'msg-n' ? 'nonno' : 'famiglia'); }
+    else if (k === 'meds') { await run(sb.from('meds').insert({ family_id: fid(), name: v.name.trim(), dose: v.dose.trim(), at_time: v.at_time, note: v.note.trim() || null }), 'Medicina aggiunta.'); await refresh(); }
+    else if (k === 'appointments') { await run(sb.from('appointments').insert({ family_id: fid(), day: v.day, at_time: v.at_time, title: v.title.trim(), place: v.place.trim() || null, companion: v.companion.trim() || null }), 'Appuntamento aggiunto.'); await refresh(); }
+    else if (k === 'contacts') { await run(sb.from('contacts').insert({ family_id: fid(), name: v.name.trim(), rel: v.rel.trim() || null, phone: v.phone.trim(), sos: !!v.sos }), 'Contatto aggiunto.'); await refresh(); }
+    else if (k === 'devices') { const link = v.link.trim(); await run(sb.from('devices').insert({ family_id: fid(), name: v.name.trim(), app: v.app.trim(), link: /^https:\/\//.test(link) ? link : null, note: v.note.trim() || null }), 'Dispositivo aggiunto.'); await refresh(); }
+    else if (k === 'solo') { if (toMin(v.from) >= toMin(v.to)) return toast("L'ora di fine deve venire dopo quella di inizio."); await run(sb.from('families').update({ solo_on: true, solo_from: v.from, solo_to: v.to, solo_every: Number(v.every) }).eq('id', fid()), 'Controllo attivato.'); await refresh(); }
+    else if (k === 'settings') { await run(sb.from('families').update({ nonno_name: v.nonno.trim(), address: v.address.trim() || null, auto_service: NEEDS.map(n => n[0]).filter(t => v['svc_' + t]) }).eq('id', fid()), 'Impostazioni salvate.'); await refresh(); }
+    else if (k === 'svctake') { await run(sb.from('requests').update({ svc: 'presa', svc_eta: v.eta, svc_operator: S.user.id }).eq('id', f.dataset.id)); const r = S.opReqs.find(x => x.id === f.dataset.id); await run(sb.from('messages').insert({ family_id: f.dataset.fam, author_id: S.user.id, author_name: 'DEXIA Service', kind: 'servizio', body: 'Abbiamo preso in carico: ' + needName(r ? r.type : '').toLowerCase() + '. Arriviamo alle ' + v.eta + '.' }), 'Presa in carico: la famiglia è avvisata.'); await refresh(); }
+  } catch (err) { console.error(err); }
+});
+document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) { S.view = b.dataset.view; render(); window.scrollTo(0, 0); } });
+
+/* ---------- microfono (dettatura del browser) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, dictOn = false, dictKey = null, dictBase = '';
+function micInput() { return document.querySelector(`[data-form="${dictKey}"] input[name=text]`); }
+function stopMic() { try { rec && rec.stop(); } catch (e) {} }
+function micClick(key) {
+  if (!SR) return toast('Usa il microfono della tastiera del telefono.');
+  if (dictOn) return stopMic();
+  dictKey = key; const i = micInput(); dictBase = i ? i.value : '';
+  rec = new SR(); rec.lang = 'it-IT'; rec.interimResults = true; rec.continuous = true;
+  rec.onresult = ev => { let fin = '', tmp = ''; for (const r of ev.results) (r.isFinal ? (fin += r[0].transcript) : (tmp += r[0].transcript)); const el = micInput(); if (el) el.value = (dictBase + ' ' + fin + ' ' + tmp).replace(/\s+/g, ' ').trim(); };
+  rec.onend = () => { dictOn = false; document.querySelectorAll('[data-mic]').forEach(x => x.classList.remove('on')); };
+  rec.onerror = () => toast('Il microfono non è disponibile.');
+  try { rec.start(); dictOn = true; document.querySelectorAll(`[data-mic="${key}"]`).forEach(x => x.classList.add('on')); } catch (e) { toast('Il microfono non è disponibile.'); }
+}
+
+/* ---------- avvio ---------- */
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') loadAll(); });
+loadAll();
+setInterval(() => { if (!busy()) render(); }, 60000);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/app/sw.js').catch(() => {});
+}
+}
+</script>
+</body>
+</html>

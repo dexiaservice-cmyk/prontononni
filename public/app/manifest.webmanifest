@@ -1,0 +1,13 @@
+{
+  "name": "ProntoNonni",
+  "short_name": "ProntoNonni",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffcf33",
+  "lang": "it",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

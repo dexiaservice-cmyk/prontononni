@@ -22,7 +22,7 @@ h3{font-size:23px;line-height:1.2;margin:0}
 
 /* testata */
 .top{position:sticky;top:0;z-index:10;background:var(--sun);color:var(--sunink);padding:12px max(5vw,18px)}
-.top .wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.top .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:10px;color:var(--sunink);text-decoration:none;font-size:24px;font-weight:700;margin-right:auto}
 .logo i{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--sun);display:grid;place-items:center}
 .nav{display:flex;gap:20px;flex-wrap:wrap;font-weight:700}
@@ -31,6 +31,8 @@ h3{font-size:23px;line-height:1.2;margin:0}
 .tel{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:22px;padding:8px 18px;border-radius:999px;white-space:nowrap}
 .tel:hover{background:#333;color:#fff}
 .tel svg{width:22px;height:22px}
+@media(max-width:1240px){.nav a:last-child{display:none}}
+@media(max-width:1120px){.nav{display:none}}
 @media(max-width:760px){.nav{display:none}.top .wrap{gap:10px}.tel{font-size:20px;padding:8px 14px}}
 
 /* hero */

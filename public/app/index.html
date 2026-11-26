@@ -30,6 +30,7 @@ h2{font-size:25px;line-height:1.15;margin:34px 0 12px}
 .now .t{font-size:clamp(56px,16vw,92px);font-weight:700;line-height:1}
 .now .m{font-size:26px;font-weight:700;line-height:1.2}
 .big{border:0;border-radius:20px;padding:18px 22px;font-size:23px;font-weight:700;min-height:70px;width:100%;background:#151515;color:#fff;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px}
+.big.mic svg{width:30px;height:30px}.big.mic.on{background:var(--sos)}.big:disabled{opacity:.5}
 .big.sos{background:var(--sos);font-size:27px;min-height:86px}
 .list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
 .med{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--line);border-radius:18px}
@@ -138,7 +139,7 @@ if (!C.url || !C.anonKey || !window.supabase) {
 const sb = window.supabase.createClient(C.url, C.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 
 /* ---------- stato ---------- */
-const S = { user: null, mem: null, operator: null, fam: null, meds: [], logs: [], contacts: [], appts: [], devices: [], checks: [], msgs: [], reqs: [], members: [], invites: [], opReqs: [], view: 'nonni', mediaUrls: {}, newCode: null };
+const S = { user: null, mem: null, operator: null, fam: null, meds: [], logs: [], contacts: [], appts: [], devices: [], checks: [], msgs: [], reqs: [], members: [], invites: [], mail: [], opReqs: [], view: 'nonni', mediaUrls: {}, newCode: null };
 async function run(p, okMsg) { const { data, error } = await p; if (error) { toast('Qualcosa non va: ' + error.message); throw error; } if (okMsg) toast(okMsg); return data; }
 
 /* ---------- caricamento dati ---------- */
@@ -158,7 +159,7 @@ async function loadAll() {
 async function loadFamily() {
   const f = S.mem.family_id, since = new Date(); since.setDate(since.getDate() - 7);
   const q = (t, sel = '*') => sb.from(t).select(sel).eq('family_id', f);
-  const [fam, meds, logs, contacts, appts, devices, checks, msgs, reqs, members, invites] = await Promise.all([
+  const [fam, meds, logs, contacts, appts, devices, checks, msgs, reqs, members, invites, mail] = await Promise.all([
     sb.from('families').select('*').eq('id', f).single(),
     q('meds').order('at_time'), q('med_logs').gte('day', dkey(since)), q('contacts').order('name'),
     q('appointments').gte('day', dkey(new Date())).order('day').order('at_time'), q('devices'),
@@ -166,9 +167,10 @@ async function loadFamily() {
     q('messages').order('created_at', { ascending: false }).limit(60),
     q('requests').order('created_at', { ascending: false }).limit(30),
     q('family_members', 'user_id, role, display_name'),
-    q('family_invites').is('used_at', null).gt('expires_at', new Date().toISOString())
+    q('family_invites').is('used_at', null).gt('expires_at', new Date().toISOString()),
+    q('mail_log').order('checked_at', { ascending: false }).limit(10)
   ]);
-  Object.assign(S, { fam: fam.data, meds: meds.data || [], logs: logs.data || [], contacts: contacts.data || [], appts: appts.data || [], devices: devices.data || [], checks: checks.data || [], msgs: (msgs.data || []).reverse(), reqs: reqs.data || [], members: members.data || [], invites: invites.data || [] });
+  Object.assign(S, { fam: fam.data, meds: meds.data || [], logs: logs.data || [], contacts: contacts.data || [], appts: appts.data || [], devices: devices.data || [], checks: checks.data || [], msgs: (msgs.data || []).reverse(), reqs: reqs.data || [], members: members.data || [], invites: invites.data || [], mail: mail.data || [] });
   await signMedia();
 }
 async function loadOperator() {
@@ -190,7 +192,7 @@ function subscribe() {
   if (S.operator) chan.on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, again);
   chan.subscribe();
 }
-const busy = () => modal.classList.contains('on') || (document.activeElement && app.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) || dictOn;
+const busy = () => aiBusy || modal.classList.contains('on') || (document.activeElement && app.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) || dictOn;
 
 /* ---------- calcoli ---------- */
 const takenToday = id => S.logs.find(l => l.med_id === id && l.day === dkey(new Date()));
@@ -232,6 +234,43 @@ function viewOnboard() {
   <p><button class="btn" data-logout="1" type="button">Esci</button></p></div>`;
 }
 
+/* ---------- assistente e posta ---------- */
+let ai = []; try { ai = JSON.parse(localStorage.getItem('pn-ai')) || []; } catch (e) {}
+let aiBusy = false, mailBusy = false;
+const AI_QUICK = ['Che medicine devo prendere oggi?', 'Quando è la prossima visita?', 'Raccontami una storia', 'Facciamo un gioco di parole'];
+function aiBox() {
+  return `<div class="chat" id="aiChat">${ai.length ? ai.map((m, i) => `<div class="bub ${m.role === 'user' ? 'me' : ''}"${i === ai.length - 1 && aiBusy ? ' id="aiLive"' : ''}><small>${m.role === 'user' ? esc(short()) : 'Assistente'}</small>${esc(m.content || 'Sto pensando…')}</div>`).join('') : '<p class="small" style="margin:0">Fammi una domanda, a voce o scrivendo. Sono un assistente, non una persona.</p>'}</div>
+  ${SR ? `<button class="big mic${dictOn && dictKey === 'ai' ? ' on' : ''}" data-mic="ai" type="button" style="margin-top:12px"${aiBusy ? ' disabled' : ''}>${IMIC}<span>Tocca e parla</span></button>` : ''}
+  <div class="quick">${AI_QUICK.map(q => `<button data-ai="${esc(q)}" type="button"${aiBusy ? ' disabled' : ''}>${esc(q)}</button>`).join('')}</div>
+  <form class="send" data-form="ai"><input name="text" aria-label="Scrivi all'assistente" placeholder="Scrivi all'assistente" autocomplete="off"><button type="submit"${aiBusy ? ' disabled' : ''}>Chiedi</button></form>
+  ${ai.length && !aiBusy ? '<p><button class="btn" data-aireset="1" type="button">Ricomincia da capo</button></p>' : ''}`;
+}
+async function askAI(text) {
+  if (aiBusy || !text) return;
+  ai.push({ role: 'user', content: text.slice(0, 1000) }); ai.push({ role: 'assistant', content: '' }); aiBusy = true; render(); scrollAI();
+  const { data, error } = await sb.functions.invoke('assistente', { body: { family_id: fid(), messages: ai.slice(0, -1).slice(-12) } });
+  ai[ai.length - 1].content = (data && (data.text || data.error)) || (error ? 'Non sono riuscito a rispondere. Riprova tra poco.' : 'Eccomi.');
+  aiBusy = false; try { localStorage.setItem('pn-ai', JSON.stringify(ai.slice(-40))); } catch (e) {}
+  render(); scrollAI(); refresh();
+}
+function scrollAI() { const c = document.getElementById('aiChat'); if (c) c.scrollTop = c.scrollHeight; }
+const MAILTAG = { truffa: ['late', 'Attenzione: possibile truffa'], importante: ['', 'Importante'], normale: ['ok', 'Niente di urgente'] };
+function mailItem(m, big) {
+  const t = MAILTAG[m.kind] || MAILTAG.normale;
+  return `<li class="med ${m.kind === 'truffa' ? 'late' : ''}" style="grid-template-columns:1fr"><span><span class="tag ${t[0]}">${t[1]}</span><br><b style="font-size:${big ? 21 : 18}px">${esc(m.summary)}</b><br><span${big ? '' : ' class="small"'}>${esc(m.advice)}</span><br><span class="small">Da ${esc(m.sender || 'sconosciuto')} · ${esc(fmtAt(m.checked_at))}</span></span></li>`;
+}
+function mailSection() {
+  const f = S.fam;
+  if (!f.mail_consent) return `<p style="margin:0 0 8px">L'assistente può leggere la posta di ${esc(f.nonno_name)}, riassumerla in parole semplici e avvisare subito in caso di truffe o scadenze. Serve il suo consenso.</p>
+  <form class="add" data-form="mail"><label class="w">Email di ${esc(f.nonno_name)}<input name="addr" type="email" required value="${esc(f.mail_address || '')}"></label>
+  <label class="chk w"><input type="checkbox" name="consent" required> ${esc(f.nonno_name)} è d'accordo che l'assistente legga la sua posta</label>
+  <button class="btn fill w" type="submit">Attiva il controllo della posta</button></form>`;
+  return `<p style="margin:0 0 8px">Posta di <b>${esc(f.mail_address || '')}</b> <button class="btn" style="min-height:36px;padding:2px 10px" data-mailoff="1" type="button">Scollega</button></p>
+  <p class="small">Il controllo automatico ogni ora arriverà presto. Intanto puoi incollare qui un'email sospetta e farla controllare.</p>
+  <form class="add" data-form="mailcheck"><label class="w">Testo dell'email (mittente, oggetto, messaggio)<textarea name="text" required style="min-height:130px"></textarea></label><button class="btn fill w" type="submit"${mailBusy ? ' disabled' : ''}>${mailBusy ? 'Sto controllando…' : 'Controlla questa email'}</button></form>
+  ${S.mail.length ? `<ul class="list" style="margin-top:12px">${S.mail.slice(0, 6).map(m => mailItem(m)).join('')}</ul>` : ''}`;
+}
+
 /* ---------- vista nonni ---------- */
 const meName = () => (S.mem && S.mem.display_name) || 'Famiglia';
 function chat(nonnoView, n) {
@@ -266,6 +305,8 @@ function viewNonni() {
   <h2>Messaggi della famiglia</h2>${chat(true, 8)}
   <div class="quick">${QUICK.map(q => `<button data-quick="${esc(q)}" type="button">${esc(q)}</button>`).join('')}</div>
   ${sendForm('msg-n', 'Scrivi un messaggio')}
+  <h2>Parla con l'assistente</h2>${aiBox()}
+  ${S.fam.mail_consent && S.mail.length ? `<h2>La tua posta</h2><ul class="list">${S.mail.slice(0, 3).map(m => mailItem(m, true)).join('')}</ul>` : ''}
   <h2>Ho bisogno di…</h2>
   <div class="grid">${NEEDS.map(n => `<button class="need" data-need="${n[0]}" type="button"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${n[2]}</svg>${n[1]}</button>`).join('')}</div>
   ${myReqs.length ? `<h2>Le tue richieste</h2><ul class="list">${myReqs.map(r => `<li class="med ${r.status === 'fatta' ? 'done' : ''}" style="grid-template-columns:1fr"><span><b>${esc(needName(r.type))}</b><br><span class="tag ${r.status === 'fatta' ? 'ok' : ''}">${esc(reqStatus(r))}</span></span></li>`).join('')}</ul>` : ''}
@@ -307,6 +348,8 @@ function viewFamiglia() {
   <h2>Contatti</h2>
   ${S.contacts.map(c => `<div class="row"><div class="grow"><b>${esc(c.name)}</b> · ${esc(c.rel || '')}<br><span class="small">${esc(c.phone)}</span>${c.sos ? ' <span class="tag late">SOS</span>' : ''}</div><button class="x" data-del="contacts" data-id="${esc(c.id)}" aria-label="Elimina ${esc(c.name)}" type="button">×</button></div>`).join('')}
   <form class="add" data-form="contacts"><label>Nome<input name="name" required></label><label>Chi è<input name="rel"></label><label>Telefono<input name="phone" type="tel" required></label><label class="chk"><input name="sos" type="checkbox"> Da chiamare in emergenza</label><button class="btn fill w" type="submit">Aggiungi contatto</button></form>
+
+  <h2>Posta di ${esc(f.nonno_name)}</h2>${mailSection()}
 
   <h2>Quando è da sola in casa</h2>
   ${si ? `<p>${si.inWin ? (si.overdue ? `<b class="tag late" style="font-size:18px">Nessun "Sto bene" dopo le ${esc(si.due)}.</b>` : `Controllo in corso. ${si.last ? `Ultimo "Sto bene" alle <b>${esc(si.last)}</b>. ` : ''}Prossimo entro le <b>${esc(si.due)}</b>.`) : `Controllo attivo dalle ${esc(t5(f.solo_from))} alle ${esc(t5(f.solo_to))}.`}</p>` : '<p class="small">Imposta le ore in cui resta da sola: l\'app le chiederà ogni tanto di toccare "Sto bene".</p>'}
@@ -382,6 +425,9 @@ app.addEventListener('click', async e => {
     else if (d.ok) { await run(sb.from('checkins').insert({ family_id: fid() }), 'Grazie! La famiglia vede che stai bene.'); await refresh(); }
     else if (d.quick) addMsg(d.quick, 'nonno');
     else if (d.mic) micClick(d.mic);
+    else if (d.ai) askAI(d.ai);
+    else if (d.aireset) { ai = []; try { localStorage.removeItem('pn-ai'); } catch (e) {} render(); }
+    else if (d.mailoff) { await run(sb.from('families').update({ mail_consent: false }).eq('id', fid()), 'Posta scollegata.'); await refresh(); }
     else if (d.need) { const sv = (S.fam.auto_service || []).includes(d.need); ask(needName(d.need) + '?', `<p style="font-size:20px;margin:0">${sv ? 'Mando la richiesta al centro servizi DEXIA Service e avviso la famiglia.' : 'Mando la richiesta alla famiglia.'} Qualcuno ti chiamerà.</p>`, 'Sì, invia', async () => { await run(sb.from('requests').insert({ family_id: fid(), type: d.need, svc: sv ? 'richiesta' : null }), 'Richiesta inviata.'); await refresh(); }); }
     else if (b.id === 'sosBtn') { const sos = S.contacts.filter(c => c.sos); ask('Emergenza', `<div class="list"><a class="big sos" href="tel:112">Chiama il 112</a>${sos.map(c => `<a class="big" style="background:var(--sky)" href="${esc(telHref(c.phone))}">Chiama ${esc(c.name)}</a>`).join('')}</div>`, 'Avvisa anche la famiglia', async () => { await run(sb.from('requests').insert({ family_id: fid(), type: 'sos' })); await addMsg('Ho premuto il tasto Emergenza', 'nonno'); toast('Ho avvisato la famiglia.'); }); }
     else if (d.claim) { await run(sb.from('requests').update({ claimed_by: meName() }).eq('id', d.claim), 'Segnato: ci pensi tu.'); await refresh(); }
@@ -402,6 +448,9 @@ app.addEventListener('submit', async e => {
     else if (k === 'nonnocode') { const { error } = await sb.auth.signInAnonymously(); if (error) return toast('Accesso non riuscito: ' + error.message); await run(sb.rpc('join_family', { p_code: v.code, p_my_name: 'Telefono dei nonni' })); S.viewSet = false; await loadAll(); }
     else if (k === 'newfam') { await run(sb.rpc('create_family', { p_nonno_name: v.nonno.trim(), p_my_name: v.me.trim() }), 'Famiglia creata: 30 giorni di prova gratuita.'); S.viewSet = false; S.view = 'famiglia'; await loadAll(); }
     else if (k === 'join') { await run(sb.rpc('join_family', { p_code: v.code, p_my_name: v.me.trim() }), 'Sei entrato nella famiglia.'); S.viewSet = false; await loadAll(); }
+    else if (k === 'ai') { if (v.text.trim()) askAI(v.text.trim()); }
+    else if (k === 'mail') { await run(sb.from('families').update({ mail_address: v.addr.trim(), mail_consent: !!v.consent }).eq('id', fid()), 'Controllo della posta attivato.'); await refresh(); }
+    else if (k === 'mailcheck') { mailBusy = true; render(); const { data, error } = await sb.functions.invoke('assistente', { body: { family_id: fid(), mode: 'posta', text: v.text } }); mailBusy = false; toast(data && data.item ? (data.item.kind === 'truffa' ? 'Possibile truffa: avvisati nonni e famiglia.' : 'Email controllata.') : (data && data.error) || 'Controllo non riuscito, riprova.'); await refresh(); }
     else if (k === 'msg-n' || k === 'msg-f') { if (v.text.trim()) await addMsg(v.text.trim().slice(0, 2000), k === 'msg-n' ? 'nonno' : 'famiglia'); }
     else if (k === 'meds') { await run(sb.from('meds').insert({ family_id: fid(), name: v.name.trim(), dose: v.dose.trim(), at_time: v.at_time, note: v.note.trim() || null }), 'Medicina aggiunta.'); await refresh(); }
     else if (k === 'appointments') { await run(sb.from('appointments').insert({ family_id: fid(), day: v.day, at_time: v.at_time, title: v.title.trim(), place: v.place.trim() || null, companion: v.companion.trim() || null }), 'Appuntamento aggiunto.'); await refresh(); }
@@ -417,7 +466,7 @@ document.getElementById('tabs').addEventListener('click', e => { const b = e.tar
 /* ---------- microfono (dettatura del browser) ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, dictOn = false, dictKey = null, dictBase = '';
-function micInput() { return document.querySelector(`[data-form="${dictKey}"] input[name=text]`); }
+function micInput() { return document.querySelector(`[data-form="${dictKey}"] input[name=text]`) || (dictKey === 'ai' ? document.querySelector('[data-form="ai"] input[name=text]') : null); }
 function stopMic() { try { rec && rec.stop(); } catch (e) {} }
 function micClick(key) {
   if (!SR) return toast('Usa il microfono della tastiera del telefono.');
@@ -425,7 +474,7 @@ function micClick(key) {
   dictKey = key; const i = micInput(); dictBase = i ? i.value : '';
   rec = new SR(); rec.lang = 'it-IT'; rec.interimResults = true; rec.continuous = true;
   rec.onresult = ev => { let fin = '', tmp = ''; for (const r of ev.results) (r.isFinal ? (fin += r[0].transcript) : (tmp += r[0].transcript)); const el = micInput(); if (el) el.value = (dictBase + ' ' + fin + ' ' + tmp).replace(/\s+/g, ' ').trim(); };
-  rec.onend = () => { dictOn = false; document.querySelectorAll('[data-mic]').forEach(x => x.classList.remove('on')); };
+  rec.onend = () => { if (dictKey === 'ai') { const el = micInput(); const t = el ? el.value.trim() : ''; if (t) { el.value = ''; setTimeout(() => askAI(t), 0); } } dictOn = false; document.querySelectorAll('[data-mic]').forEach(x => x.classList.remove('on')); };
   rec.onerror = () => toast('Il microfono non è disponibile.');
   try { rec.start(); dictOn = true; document.querySelectorAll(`[data-mic="${key}"]`).forEach(x => x.classList.add('on')); } catch (e) { toast('Il microfono non è disponibile.'); }
 }

@@ -248,10 +248,15 @@ function aiBox() {
 async function askAI(text) {
   if (aiBusy || !text) return;
   ai.push({ role: 'user', content: text.slice(0, 1000) }); ai.push({ role: 'assistant', content: '' }); aiBusy = true; render(); scrollAI();
-  const { data, error } = await sb.functions.invoke('assistente', { body: { family_id: fid(), messages: ai.slice(0, -1).slice(-12) } });
-  ai[ai.length - 1].content = (data && (data.text || data.error)) || (error ? 'Non sono riuscito a rispondere. Riprova tra poco.' : 'Eccomi.');
+  const r = await callFn({ family_id: fid(), messages: ai.slice(0, -1).slice(-12) });
+  ai[ai.length - 1].content = r.text || r.error || 'Non sono riuscito a rispondere. Riprova tra poco.';
   aiBusy = false; try { localStorage.setItem('pn-ai', JSON.stringify(ai.slice(-40))); } catch (e) {}
   render(); scrollAI(); refresh();
+}
+async function callFn(body) {
+  const { data, error } = await sb.functions.invoke('assistente', { body });
+  if (!error) return data || {};
+  try { return await error.context.json(); } catch (e) { return {}; }
 }
 function scrollAI() { const c = document.getElementById('aiChat'); if (c) c.scrollTop = c.scrollHeight; }
 const MAILTAG = { truffa: ['late', 'Attenzione: possibile truffa'], importante: ['', 'Importante'], normale: ['ok', 'Niente di urgente'] };
@@ -450,7 +455,7 @@ app.addEventListener('submit', async e => {
     else if (k === 'join') { await run(sb.rpc('join_family', { p_code: v.code, p_my_name: v.me.trim() }), 'Sei entrato nella famiglia.'); S.viewSet = false; await loadAll(); }
     else if (k === 'ai') { if (v.text.trim()) askAI(v.text.trim()); }
     else if (k === 'mail') { await run(sb.from('families').update({ mail_address: v.addr.trim(), mail_consent: !!v.consent }).eq('id', fid()), 'Controllo della posta attivato.'); await refresh(); }
-    else if (k === 'mailcheck') { mailBusy = true; render(); const { data, error } = await sb.functions.invoke('assistente', { body: { family_id: fid(), mode: 'posta', text: v.text } }); mailBusy = false; toast(data && data.item ? (data.item.kind === 'truffa' ? 'Possibile truffa: avvisati nonni e famiglia.' : 'Email controllata.') : (data && data.error) || 'Controllo non riuscito, riprova.'); await refresh(); }
+    else if (k === 'mailcheck') { mailBusy = true; render(); const data = await callFn({ family_id: fid(), mode: 'posta', text: v.text }); mailBusy = false; toast(data.item ? (data.item.kind === 'truffa' ? 'Possibile truffa: avvisati nonni e famiglia.' : 'Email controllata.') : data.error || 'Controllo non riuscito, riprova.'); await refresh(); }
     else if (k === 'msg-n' || k === 'msg-f') { if (v.text.trim()) await addMsg(v.text.trim().slice(0, 2000), k === 'msg-n' ? 'nonno' : 'famiglia'); }
     else if (k === 'meds') { await run(sb.from('meds').insert({ family_id: fid(), name: v.name.trim(), dose: v.dose.trim(), at_time: v.at_time, note: v.note.trim() || null }), 'Medicina aggiunta.'); await refresh(); }
     else if (k === 'appointments') { await run(sb.from('appointments').insert({ family_id: fid(), day: v.day, at_time: v.at_time, title: v.title.trim(), place: v.place.trim() || null, companion: v.companion.trim() || null }), 'Appuntamento aggiunto.'); await refresh(); }
